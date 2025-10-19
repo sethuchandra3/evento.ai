@@ -9,6 +9,9 @@ import CheckCircleIcon from './components/icons/CheckCircleIcon';
 import ClockIcon from './components/icons/ClockIcon';
 import ZapIcon from './components/icons/ZapIcon';
 import ShieldIcon from './components/icons/ShieldIcon';
+import ApiTest from './components/ApiTest';
+import { sendMessageToLambda } from './components/MessageHandler';
+import LoaderIcon from './components/icons/LoaderIcon';
 
 const benefits = [
   {
@@ -34,7 +37,7 @@ const benefits = [
 ];
 
 // Custom hook to detect when an element is on screen
-const useOnScreen = (ref: React.RefObject<HTMLElement>, options?: IntersectionObserverInit) => {
+export const useOnScreen = (ref: React.RefObject<HTMLElement>, options?: IntersectionObserverInit) => {
   const [isIntersecting, setIntersecting] = useState(false);
 
   useEffect(() => {
@@ -70,6 +73,53 @@ const App: React.FC = () => {
   const isWorksGridVisible = useOnScreen(worksGridRef, { threshold: 0.1 });
   const isHelpsHeaderVisible = useOnScreen(helpsHeaderRef, { threshold: 0.1 });
 
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
+
+  const handleSyncGroupMe = async () => {
+    setIsSyncing('groupme');
+    const message = "This is a test message to confirm the GroupMe sync is working!";
+    try {
+      console.log('Sending message to sync GroupMe...');
+      const data = await sendMessageToLambda(message);
+      console.log('Response from lambda:', data);
+      
+      const responseMessage = data.message || 'Check console for full response.';
+      alert(`✅ Sync complete! AI response: ${responseMessage}`);
+
+    } catch (error) {
+      console.error('Error syncing with GroupMe:', error);
+      alert(`⚠️ Error syncing with GroupMe: ${(error as Error).message}`);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
+  const syncGoogleCalendar = async () => {
+    setIsSyncing('calendar');
+    const message = "Team meeting tomorrow at 6pm in Rauch 101";
+    try {
+      console.log('Sending message to sync Google Calendar...');
+      const data = await sendMessageToLambda(message);
+      console.log('Response from lambda:', data);
+
+      const responseMessage = data.message || JSON.stringify(data);
+
+      if (responseMessage.toLowerCase().includes('event added')) {
+          alert(`✅ Event added to calendar!`);
+      } else if (responseMessage.toLowerCase().includes('no event found')) {
+          alert(`⚠️ No event found in the message.`);
+      } else {
+          alert(`✅ Sync complete! AI Response: ${responseMessage}`);
+      }
+
+    } catch (error) {
+      console.error('Error syncing Google Calendar:', error);
+      alert(`⚠️ Error syncing Google Calendar: ${(error as Error).message}`);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
   return (
     <div className="relative min-h-screen w-full bg-[#0B1D35] text-white overflow-x-hidden">
       <div className="absolute top-0 left-0 w-full h-full">
@@ -96,13 +146,39 @@ const App: React.FC = () => {
               AI-powered integration that reads your GroupMe messages and automatically adds detected events to your Google Calendar.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-              <button className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-cyan-400 text-black font-bold rounded-xl shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:bg-cyan-300 hover:scale-105 transform focus:outline-none focus:ring-4 focus:ring-cyan-300">
-                <ChatIcon className="w-6 h-6" strokeWidth={2}/>
-                <span>Sync GroupMe</span>
+              <button 
+                onClick={handleSyncGroupMe}
+                disabled={!!isSyncing}
+                className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-cyan-400 text-black font-bold rounded-xl shadow-lg shadow-cyan-500/30 transition-all duration-300 hover:bg-cyan-300 hover:scale-105 transform focus:outline-none focus:ring-4 focus:ring-cyan-300 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed disabled:scale-100"
+              >
+                {isSyncing === 'groupme' ? (
+                  <>
+                    <LoaderIcon className="w-6 h-6" />
+                    <span>Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <ChatIcon className="w-6 h-6" strokeWidth={2}/>
+                    <span>Sync GroupMe</span>
+                  </>
+                )}
               </button>
-              <button className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-[#1E3A8A] text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 transition-all duration-300 hover:bg-blue-800 hover:scale-105 transform focus:outline-none focus:ring-4 focus:ring-blue-500">
-                <CalendarIcon className="w-6 h-6" strokeWidth={2}/>
-                <span>Sync Google Calendar</span>
+              <button 
+                onClick={syncGoogleCalendar}
+                disabled={!!isSyncing}
+                className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-[#1E3A8A] text-white font-bold rounded-xl shadow-lg shadow-blue-900/40 transition-all duration-300 hover:bg-blue-800 hover:scale-105 transform focus:outline-none focus:ring-4 focus:ring-blue-500 disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed disabled:scale-100"
+              >
+                 {isSyncing === 'calendar' ? (
+                  <>
+                    <LoaderIcon className="w-6 h-6" />
+                    <span>Syncing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CalendarIcon className="w-6 h-6" strokeWidth={2}/>
+                    <span>Sync Google Calendar</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -177,6 +253,8 @@ const App: React.FC = () => {
            </div>
         </section>
 
+        <ApiTest />
+
 
         <footer className="py-8 text-center text-gray-400 text-sm bg-[#0B1D35]">
           <p>© {new Date().getFullYear()} Evento.ai. All rights reserved.</p>
@@ -201,10 +279,17 @@ const App: React.FC = () => {
             0% { transform: translateX(0%); }
             100% { transform: translateX(-50%); }
           }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
           .animate-fade-in-down { animation: fade-in-down 0.8s ease-out forwards; }
           .animate-fade-in-up { animation: fade-in-up 0.8s ease-out 0.2s forwards; }
           .animate-marquee {
             animation: marquee 20s linear infinite;
+          }
+          .animate-spin {
+            animation: spin 1s linear infinite;
           }
           .hover-pause:hover {
             animation-play-state: paused;
