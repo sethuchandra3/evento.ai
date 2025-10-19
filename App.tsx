@@ -9,7 +9,6 @@ import CheckCircleIcon from './components/icons/CheckCircleIcon';
 import ClockIcon from './components/icons/ClockIcon';
 import ZapIcon from './components/icons/ZapIcon';
 import ShieldIcon from './components/icons/ShieldIcon';
-import ApiTest from './components/ApiTest';
 import { sendMessageToLambda } from './components/MessageHandler';
 import LoaderIcon from './components/icons/LoaderIcon';
 
@@ -37,7 +36,7 @@ const benefits = [
 ];
 
 // Custom hook to detect when an element is on screen
-export const useOnScreen = (ref: React.RefObject<HTMLElement>, options?: IntersectionObserverInit) => {
+const useOnScreen = (ref: React.RefObject<HTMLElement>, options?: IntersectionObserverInit) => {
   const [isIntersecting, setIntersecting] = useState(false);
 
   useEffect(() => {
@@ -252,9 +251,6 @@ const App: React.FC = () => {
               </div>
            </div>
         </section>
-
-        <ApiTest />
-
 
         <footer className="py-8 text-center text-gray-400 text-sm bg-[#0B1D35]">
           <p>© {new Date().getFullYear()} Evento.ai. All rights reserved.</p>
