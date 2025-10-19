@@ -1,0 +1,5 @@
+{
+  "name": "Evento AI",
+  "description": "An AI-powered integration that reads your GroupMe messages and automatically adds detected events to your Google Calendar. Never miss an event again!",
+  "requestFramePermissions": []
+}
